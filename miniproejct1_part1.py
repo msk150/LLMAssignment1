@@ -3,6 +3,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 from datasets import load_dataset
 import time
+import nltk #for tokenizing
 
 class TextSimilarityModel:
     def __init__(self, corpus_name, rel_name, model_name='all-MiniLM-L6-v2', top_k=10):
@@ -44,6 +45,7 @@ class TextSimilarityModel:
         for qid, doc_id in zip(qrels["query-id"], qrels["corpus-id"]):
             if qid in self.query_id_to_relevant_doc_ids:
                 self.query_id_to_relevant_doc_ids[qid].append(doc_id)
+        
 
     def encode_with_glove(self, glove_file_path, sentences):
         """
@@ -56,6 +58,36 @@ class TextSimilarityModel:
         ###########################################################################
        
         ###########################################################################
+
+        ############
+        #Code by Matt
+        ############
+
+        #load GloVe 50d
+        embeddings = {} #dictionary for word embeddings
+        with open(glove_file_path, 'r') as f:
+            for line in f:
+                entry = line.split()
+                word = entry[0]
+                wordVector = np.asarray(entry[1:], 'float32')
+                embeddings[word]=wordVector
+
+        #get sentence embeddings
+        docs_embeddings = [] #list of embeddings for each doc
+        for doc in sentences: #breaks sentences into their respective indidual docs
+            doc_embeddings =[] #embeddings for specific doc
+            tokens = nltk.tokenize(doc)
+            for token in tokens:
+                doc_embeddings.append(embeddings[token])
+            docs_embeddings.append(doc_embeddings) #add specific doc embeddings to list of all doc embeddings
+           
+        return docs_embeddings
+
+        ##################
+        #End Code by Matt
+        ##################
+
+
 
     def rank_documents(self, encoding_method='sentence_transformer'):
         """
@@ -77,6 +109,23 @@ class TextSimilarityModel:
         ###########################################################################
       
         ###########################################################################
+
+        ############
+        #Code by Matt
+        ############
+        query_id_to_ranked_doc_ids = {}
+        temp_list = [] #temp list for storing cosine similarities
+        for doc_embeddings in document_embeddings:
+            cosineSim = cosine_similarity(query_embeddings[0], doc_embeddings)
+            print(cosineSim)
+            temp_list.append(cosineSim)
+
+        #unsre what he wants the return format to be. Need to figure that out
+
+        ##################
+        #End Code by Matt
+        ##################
+
 
     @staticmethod
     def average_precision(relevant_docs, candidate_docs):
